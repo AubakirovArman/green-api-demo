@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Green API Demo</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+
+</head>
+<body>
+  <div class="container text-center mt-5">
+  <div class="row">
+    <div class="col">
+  <div class="d-grid gap-2">
+  <h3>Авторизация GREEN API</h3>
+  <div class="mb-3">
+    <label for="idInstance">ID инстанса:</label>
+    <input class="form-control" type="text" id="idInstance" placeholder="Введите idInstance" />
+  </div>
+  <div class="mb-3">
+    <label for="apiToken">API токен:</label>
+    <input class="form-control"  type="text" id="apiToken" placeholder="Введите ApiTokenInstance" />
+  </div>
+</div>
+
+  <h3>Методы API</h3>
+  <!-- Кнопки вызова методов GetSettings и GetStateInstance -->
+  <div class="d-grid gap-2">
+    <button class="btn btn-primary" id="btnGetSettings">GetSettings</button>
+    <button class="btn btn-primary" id="btnGetState">GetStateInstance</button>
+  </div>
+
+  <!-- Поля и кнопки для отправки сообщения или файла -->
+  <div class="d-grid mt-5">
+    <h3>Отправка сообщения</h3>
+    <div class="d-grid gap-2">
+      <input class="form-control" type="text" id="chatId" placeholder="Chat ID (номер без @c.us)" />
+      <input class="form-control" type="text" id="messageText" placeholder="Текст сообщения" />
+      <button class="btn btn-primary" id="btnSendMessage">Send Message</button>
+    </div>
+    <h3 class="d-grid mt-5">Отправка картинки</h3>
+  <div class="d-grid border">
+    <input class="form-control" type="text" id="chatId1" placeholder="Chat ID (номер бeз @c.us)" />
+    <input class="form-control" type="text" id="fileUrl" placeholder="URL на картинку" />
+    <button class="btn btn-primary" id="btnSendFile">Send File by URL</button>
+  </div>
+</div>
+</div>
+
+
+<div class="col" >
+  <div class="d-grid gap-3">
+  <h3>Ответ API:</h3>
+  <label></label>
+  <textarea class="form-control" style="height: 60vh; display: flex;" id="response" readonly placeholder="Здесь будет ответ..."></textarea>
+</div>
+</div>
+</div>
+
+</div>
+  <script>
+    // ======= Функции для вывода и форматирования ответа =======
+    function displayResponse(data) {
+      const output = document.getElementById('response');
+      if (typeof data === 'object') {
+        // Форматируем объект в JSON с отступами
+        output.value = JSON.stringify(data, null, 2);
+      } else {
+        output.value = String(data);
+      }
+    }
+
+    // ======= Функции вызова API =======
+    async function getSettings() {
+      const id = document.getElementById('idInstance').value.trim();
+      const token = document.getElementById('apiToken').value.trim();
+      if (!id || !token) {
+        displayResponse("⚠️ Введите idInstance и ApiTokenInstance");
+        return;
+      }
+      const url = `https://7105.api.greenapi.com/waInstance${id}/getSettings/${token}`;
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+        displayResponse(data);
+      } catch (err) {
+        displayResponse("Ошибка: " + err.message);
+      }
+    }
+
+    async function getState() {
+      const id = document.getElementById('idInstance').value.trim();
+      const token = document.getElementById('apiToken').value.trim();
+      if (!id || !token) {
+        displayResponse("⚠️ Введите idInstance и ApiTokenInstance");
+        return;
+      }
+      const url = `https://7105.api.greenapi.com/waInstance${id}/getStateInstance/${token}`;
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+        displayResponse(data);
+      } catch (err) {
+        displayResponse("Ошибка: " + err.message);
+      }
+    }
+
+    async function sendMessage() {
+      const id = document.getElementById('idInstance').value.trim();
+      const token = document.getElementById('apiToken').value.trim();
+      const chatId = document.getElementById('chatId').value.trim()+'@c.us';
+      const message = document.getElementById('messageText').value.trim();
+      if (!id || !token || !chatId || !message) {
+        displayResponse("⚠️ Пожалуйста, заполните ID, токен, chatId и текст сообщения");
+        return;
+      }
+      const firstFour = id.substring(0, 4);
+
+      const url = `https://${firstFour}.api.greenapi.com/waInstance${id}/sendMessage/${token}`;
+      const payload = { chatId: chatId, message: message };
+      try {
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        displayResponse(data);
+      } catch (err) {
+        displayResponse("Ошибка: " + err.message);
+      }
+    }
+
+    async function sendFile() {
+      const id = document.getElementById('idInstance').value.trim();
+      const token = document.getElementById('apiToken').value.trim();
+      const chatId = document.getElementById('chatId1').value.trim()+'@c.us';
+      const fileUrl = document.getElementById('fileUrl').value.trim();
+      if (!id || !token || !chatId || !fileUrl ) {
+        displayResponse("⚠️ Заполните ID, токен, chatId, URL");
+        return;
+      }
+      const fileName = fileUrl.split('/').pop(); 
+      const firstFour = id.substring(0, 4);
+      const url = `https://${firstFour}.api.greenapi.com/waInstance${id}/sendFileByUrl/${token}`;
+      const payload = { chatId: chatId, urlFile: fileUrl, fileName: fileName };
+      try {
+        const headResponse = await fetch(fileUrl, { method: 'HEAD' });
+        const contentType = headResponse.headers.get('Content-Type');
+        if (!contentType) {
+            displayResponse("Ошибка: невозможно определить тип файла!");
+            return;
+        }
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': contentType},
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        displayResponse(data);
+      } catch (err) {
+        displayResponse("Ошибка: " + err.message);
+      }
+    }
+
+    // Привязка функций к кнопкам
+    document.getElementById('btnGetSettings').addEventListener('click', getSettings);
+    document.getElementById('btnGetState').addEventListener('click', getState);
+    document.getElementById('btnSendMessage').addEventListener('click', sendMessage);
+    document.getElementById('btnSendFile').addEventListener('click', sendFile);
+  </script>
+
+</body>
+</html>
